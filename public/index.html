@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fastify</title>
+</head>
+<body>
+    <div id="content">
+        <div id="paginator">
+            <div class="controls" id="pagcontrol">
+                <button class="prev"></button>
+                <div class="pagecounter">-</div>
+                <button class="next"></button>
+            </div>
+            <div id="pagec">
+            </div>
+        </div>
+        <div id="tab2">
+            <div class="controls">
+                <span>supernick#1</span>
+                <button class="edit def" disabled="true">Редактировать</button>
+                <button class="history" disabled="true">История</button>
+                <button class="close hidden">×</button>
+                <div style="flex-grow: 1;"></div>
+                <button class="que">i</button>
+                <button class="create active" title="Создать нового пользователя">Создать »</button>
+            </div>
+            <div id="tabc">
+                <div id="UserInfoEdit" class="hidden">
+                    <h3><span>#User</span><span id="loadinfo">Loading...</span></h3>
+                    <div class="cols">
+                        <div class="col1">
+                            <span>Nickname: </span>
+                            <span>Status: </span>
+                            <span>Description: </span>
+                        </div>
+                        <div class="col2">
+                            <input type="text" id="nicknameinp">
+                            <input type="text" id="statusinp">
+                            <textarea id="descriptioninp" cols="30" rows="10"></textarea>
+                        </div>
+                    </div>
+                    <div id="UserEditInfo"></div>
+                </div>
+                <div id="UserUpdatesHistoryTab" class="hidden">
+                    <h3>#User</h3>
+                    <div id="TransactionInfo">
+                        <div class="cols">
+                            <div class="col1">
+                                <span>ActionTransactionId: </span>
+                                <span>ActionName: </span>
+                                <span>UpdateChanges: </span>
+                            </div>
+                            <div class="col2">
+                                <span>1</span>
+                                <span>2</span>
+                                <div>3</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div><button onclick="refreshUserHistory()">refresh</button><h3 id="historyloadinfo">Loading...</h3></div>
+                    <div id="UserUpdatesHistory">
+
+                    </div>
+                </div>
+                <div id="QueTab">
+                    <div>
+                        Вы можете выбрать вкладку "по умолчанию" нажав по ней правой кнопкой мыши
+                        (Вкладка по умолчанию открывается после нажатия на info при выборе нового 
+                            пользователя в списке ВСЕХ обновлений(первая колонка))
+                    </div>
+                    <div>
+                        В списке ВСЕХ обновлений при нажатии на info, подсвечиваются все 'info' относящиеся к текущему пользователю
+                    </div>
+                    <div>
+                        Чтобы сохранить изменение поля Пользователя в окне редактирования, нужно нажать enter
+                    </div>
+                    <div>
+                        {{Не сделано обновление имени пользователя на карточках, если то было изменено(они изменятся только после обновления страницы).
+                        Автоматическое обновление легко сделать, но я не успел}}
+                        {{Не сделано автоматическое обновление истории пользователя, поэтому добавил ручное обновление}}
+                    </div>
+                    <div>
+                        Карточки в первой колонке сортируется так, 
+                        что самая последняя страница -- свежие обновления, 
+                            самая последняя карточка -- самое последнее обновление<br>
+                        Карточки во вкладке Истории сортируется так, что самая первая карточка -- самое свежее обновление
+                    </div>
+                </div>
+                <div id="UserCreateTab">
+                    <div class="cols">
+                        <div class="col1">
+                            <span>Nickname: </span>
+                            <span>Status: </span>
+                            <span>Description: </span>
+                        </div>
+                        <div class="col2">
+                            <input type="text" id="ninp">
+                            <input type="text" id="sinp" value="Not implemented" disabled="true">
+                            <textarea id="dinp" cols="30" rows="10" disabled="true">Not implemented</textarea>
+                            <div class="controls">
+                                <!-- <button>Очистить</button> -->
+                                <button onclick="CreateUser()">Создать</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="CreateUserInfo"></div>
+                </div>
+            </div>
+        </div>
+</div>
+    <style>
+        *, body, html {
+            margin: 0;
+            padding: 0;
+        }
+        #UserEditInfo::before {
+            content: 'Последнее обновление: ';
+        }
+        #UserInfoEdit #loadinfo, #historyloadinfo {
+            color: #577716;
+            margin-left: 3rem;
+        }
+        #UserInfoEdit {
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        #QueTab {
+            margin: 1rem 0.7rem 1rem 2rem;
+        }
+        #QueTab > * {
+            margin-top: 0.57rem;
+        }
+        .cols {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+        }
+        .cols > * {
+            display: flex;
+            flex-direction: column;
+            padding-top: 5px;
+        }
+        .cols > * > * {
+            margin-top: 4.5px;
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+        }
+        .col1 {
+            width: 5rem;
+            min-width: 5rem;
+            margin-left: 1.57rem;
+        }
+        #UserUpdatesHistoryTab .col1 {
+            width: 9rem
+        }
+        .col2 {
+            flex-grow: 1;
+            overflow: hidden;
+            padding-left: 3px;
+            padding-bottom: 3px;
+            padding-right: 5px;
+        }
+        .col2 > *:focus,
+        .col2 > *:active,
+        .col2 > *:visited,
+        .col2 > *:target {
+            z-index: 101;
+        }
+        /* #UserInfoEdit > span{
+            padding-left: 1rem;
+            width: 100%;
+        }
+        #UserInfoEdit > * div {
+            display: inline-block;
+            width: 5rem;
+            height: 100%;
+        }
+        #UserInfoEdit > * div.top {
+            display: flex;
+            flex-direction: column;
+        }
+        #UserInfoEdit > * input, #UserInfoEdit > * textarea {
+            display: inline-block;
+            width: calc(100% - 6rem - 4px);
+        } */
+        /* #UserInfoEdit > * textarea {
+            min-width: calc(100% - 4px);
+            max-width: calc(100% - 4px);
+        } */
+        body, html {
+            min-height: 100vh;
+            background-color: #aae86b21;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        #content {
+            display: flex;
+            flex-grow: 1;
+            flex-direction: row;
+        }
+        #paginator, #tab2 {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            height: 100%;
+            max-width: 100%;
+            width: 600px;
+            margin-left: 1rem;
+            background-color: #aae86b21;
+            border-right: 1px #577716 dotted;
+            margin-right: 1rem;
+        }
+        #pagec {
+            flex-grow: 1;
+        }
+        .controls {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+        }
+        .pagecounter {
+            background-color: antiquewhite;
+            border-radius: 3pt;
+            padding: 0 1rem 0 1rem;
+            margin: 0 1px 0 1px;
+        }
+        button.prev::after {
+            content: ' << ';
+            margin: 0 1rem 0 1rem;
+        }
+        button.next::before {
+            content: ' >> ';
+            margin: 0 1rem 0 1rem;
+        }
+        #tab2 .controls > span {
+            margin-right: 1rem;
+            min-width: 9rem;
+        }
+        #tab2 .controls > span::before {
+            content: 'User: ';
+        }
+        #tab2 .controls .close, #tab2 .controls .que {
+            padding: 0 0.3rem 0 0.3rem;
+            transition: 100ms;
+        }
+        #tab2 .controls .close:hover {
+            background-color: rgb(204, 22, 22);
+            border-color: rgb(204, 22, 22);
+            color: azure;
+        }
+        #tab2 .controls .close:active {
+            background-color: rgb(129, 14, 14);
+            border-color: rgb(129, 14, 14);
+        }
+        #tab2 button {
+            padding: 0 1rem 0 1rem;
+            border-radius: 5pt;
+        }
+        #tab2 button.active {
+            background-color: yellow;
+            border-color: yellow;
+        }
+        #tab2 button.active:hover {
+            background-color: rgb(158, 158, 8);
+            border-color: rgb(158, 158, 8);
+        }
+        #tab2 button.active:active {
+            background-color: rgb(82, 82, 9);
+            border-color: rgb(82, 82, 9);
+        }
+        .row {
+            padding: 0.3rem 0.3rem 1rem 1rem;
+            background-color: antiquewhite;
+            margin-bottom: 1px;
+            position: relative;
+            border-bottom: 1px black dashed;
+        }
+        .Username, .row span {
+            font-family: Consolas;
+        }
+        .Username::before {
+            content: 'User ';
+            font-family: serif;
+        }
+        .nickname::before {
+            content:'nickname: ';
+            font-family: serif;
+        }
+        .status::before {
+            content:'status: ';
+            font-family: serif;
+        }
+        .description::before {
+            content:'description: ';
+            font-family: serif;
+        }
+        .nickname::after, .status::after {
+            content: '';
+            display: block;
+        }
+        .updates > div {
+            display: inline-grid;
+        }
+        .row .tid {
+            color: darkgrey;
+            margin-left: 1rem;
+        }
+        .row .ActionName {
+            font-family: system-ui;
+            color: rgb(235, 136, 8);
+            font-weight: bold;
+        }
+        .row .atid1::after,.row .atid2::after {
+            content: ' by';
+            font-family: serif;
+            color: black;
+            font-weight: 100;
+        }
+        .row .atid3::after,.row .atid4::after,.row .atid5::after {
+            content: ' to';
+            font-family: serif;
+            color: black;
+            font-weight: 100;
+        }
+        .info {
+            position: absolute;
+            top:0;
+            right: 0;
+            background-color: rgb(121, 152, 199);
+            padding:  .3rem 1rem .3rem 1rem;
+        }
+        .info:hover {
+            background-color: rgb(102, 174, 223);
+        }
+        .info:active {
+            background-color: rgb(16, 151, 241);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .info.active {
+            background-color: rgb(233, 235, 110);
+        }
+        .def::after {
+            content: '»';
+            margin-left: 0.3rem;
+        }
+    </style>
+    <!-- <textarea id='sql' name="" id="" cols="30" rows="10"></textarea><button onclick="sendsql()">Send sql</button> -->
+    <!-- <script>function sendsql(){
+        fetch(`/api/sqlexec?sms=${encodeURIComponent(sql.value)}`).then(data=>data.json()).then(console.log);
+    }</script> -->
+    <script>
+        let show = ()=>aler('err');
+        const by = x=>(x.atid==1)||(x.atid==2)?`
+            <div>
+                <span class='nickname'>${x.nickname}</span>
+                <span class='status'>${x.status}</span>
+                <span class='description'>${x.description}</span>
+            </div>
+        `:`<span>${x._value_}<span>`
+        const s = x=>`
+            <div class="row" data-uid="${x.uid}" data-tid="${x.tid}" id="row${x.tid}" data-atid="${x.atid}">
+                <div class="info" onclick="show(${x.uid}, '${x.actualnickname}', this.parentElement)">info</div>
+                <div class="Username">${x.actualnickname}<span class="uid">#${x.uid}</span><span class="tid">:${x.tid}</span></div>
+                <span class="ActionName atid${x.atid}">${x.actionname}</span>
+                <span class="updates">
+                    ${by(x)}
+                </span>
+            </div>`;
+        class SimpleEvent {
+            constructor(obj, name) {
+                const __handlers = [];
+                Object.defineProperty(obj, name, {
+                    get:()=>Symbol.toStringTag,
+                    set:handler=>__handlers.push(handler)
+                })//unsub not included =D
+                return function eventSending(){
+                    __handlers.map(handler=>handler.apply(null, arguments))
+                };
+            }
+        }
+        const Pages = [];
+        class Page {
+            constructor(rows) {
+                const pageEl = document.createElement('div');
+                pageEl.innerHTML = rows.map(s).join(' ');
+                return pageEl;
+            }
+        }
+        class ActionsRowControl {//Lighting actions which linked with current User
+            constructor(PagControl, AdvancedTabsControl) {
+                // onuserchanged, onpagechanged, onnewrowInActivePage
+                function ActivateOnSameUser({classList, parentElement}, user) {
+                    return classList.toggle('active',+parentElement.dataset.uid===user?.uid)
+                }
+                async function toggle(user) {//updates data in Active Page
+                    return [...p.CurrentPage.getElementsByClassName('info')]
+                        .map(info=>ActivateOnSameUser(info, user))
+                }
+                AdvancedTabsControl.onuserchanged = toggle;
+                PagControl.onnewrowInActivePage = async(row)=>{
+                    console.log(row);
+                    ActivateOnSameUser(row.firstElementChild, AdvancedTabsControl.currentUser)
+                }
+                PagControl.onpagechanged = (newpage)=>{
+                    //should me parse oldpage?
+                    console.log(newpage);
+                    toggle(AdvancedTabsControl.currentUser);
+                }
+            }
+        }
+        class PaginatorControls {
+            PagesCount
+            LastPage
+            constructor(pagescount, curpage) {
+                // this.html = pagcontrol;
+                const [PrevButt, PagesCounter, NextButt] = pagcontrol.children;
+                var _CurrentPageNumber = PagesCounter.textContent = this.PagesCount = pagescount;
+                const self = this;
+                this.LastPage = curpage;
+                PrevButt.disabled = pagescount==0;
+                NextButt.disabled = true;
+                Object.defineProperty(this, 'CurrentPageNumber', {
+                    get:()=>_CurrentPageNumber,
+                    set:async newPageNumber=>{
+                        if((newPageNumber!==null)&&(newPageNumber!==_CurrentPageNumber)) {
+                            const newpage = Pages[newPageNumber];
+                            const page = newpage==undefined ?
+                                await fetch(`/api/getpage?page=${newPageNumber}`)
+                                    .then(data=>data.json())
+                                    .then(pack=>{
+                                        const page = new Page(pack.rows);
+                                        Pages[newPageNumber] = page;
+                                        return page;
+                                    }) : newpage;
+                            this.CurrentPage = page;
+                        }
+                        _CurrentPageNumber = PagesCounter.textContent = newPageNumber;
+                        PrevButt.disabled = _CurrentPageNumber===0;
+                        NextButt.disabled = _CurrentPageNumber===self.PagesCount;
+                    }
+                });
+                const $onpagechanged = new SimpleEvent(this, 'onpagechanged');
+                // const $onLastPageOpened = new SimpleEvent(this, 'onLastPageOpened');
+                const $onnewrowInActivePage = new SimpleEvent(this, 'onnewrowInActivePage');
+                Object.defineProperty(this, 'CurrentPage', {
+                    get:()=>pagec.children[0],
+                    set:newpage=>{
+                        pagec.replaceChildren(newpage)
+                        $onpagechanged(newpage)
+                    }
+                })
+                let LastActivePageMutationsObserver = new MutationObserver(function(mutations) {
+                    mutations.map(({addedNodes})=>[...addedNodes].filter(({nodeType})=>nodeType===1).map($onnewrowInActivePage));
+                });
+                this.onpagechanged = (newpage) => {
+                    if(_CurrentPageNumber===self.PagesCount) {
+                        return LastActivePageMutationsObserver.observe(this.LastPage, {
+                            childList: true,
+                            attributes: false,
+                            characterData: false,
+                            subtree: false,
+                            attributeOldValue: false,
+                            characterDataOldValue: false
+                        });
+                        // return $onLastPageOpened(newpage);
+                    }
+                    LastActivePageMutationsObserver.disconnect();
+                    //disable observing of last Page for $onnewrowInActivePage
+                    /**/
+                }
+                this.CurrentPage = curpage;
+                NextButt.onclick = async()=>this.CurrentPageNumber += 1;
+                PrevButt.onclick = async()=>this.CurrentPageNumber -= 1;
+            }
+            append(rows) {
+                const rowscount = rows.length;
+                if(this.LastPage.childElementCount + rowscount > 15) {
+                    if(this.LastPage.childElementCount === 15) {
+                        const page = new Page(rows);
+                        Pages[++this.PagesCount] = page;
+                        this.CurrentPageNumber = null;//updating Paginator Controls(enable Next Page Button)
+                    } else {
+                        const ke = 15-this.LastPage.childElementCount
+                        this.append(rowscount.slice(0, ke)); //fill current Last Page
+                        this.append(rowscount.slice(ke)); //fill next Last Page
+                    }
+                } else {
+                    this.LastPage.insertAdjacentHTML('beforeend', rows.map(s).join(' '));
+                }
+            }
+        }
+        class AdvancedTabsControl {
+            ActiveTab = UserCreateTab;
+            Tabs = [UserInfoEdit, UserUpdatesHistoryTab, UserCreateTab, QueTab]
+            TabsLabels = [];
+            defaultTab = UserInfoEdit;
+            constructor() {
+                [
+                    this.UserNameLabel, this.EditButt, this.HistoryButt, 
+                    this.CloseButt, this.spacing, this.QueButt, this.CreateNewUserButt
+                ] = tab2.children[0].children;
+                const self = this;
+                var _currentUser = null;
+                var _currentAcion = null;
+                const $onuserchanged = new SimpleEvent(this, 'onuserchanged');
+                const $onuserswaped = new SimpleEvent(this, 'onuserswaped');
+                const $onuserset = new SimpleEvent(this, 'onuserset');
+                const $onuserreset = new SimpleEvent(this, 'onuserreset');
+                {
+                    this.onuserswaped = $onuserchanged
+                    this.onuserreset = $onuserchanged
+                    this.onuserset = $onuserchanged
+                }
+                const UserNameLabels = [this.UserNameLabel, UserInfoEdit.children[0].children[0], UserUpdatesHistoryTab.children[0]];
+                Object.defineProperty(this, 'currentUser', {
+                    get:()=>_currentUser,
+                    set:async newuser=>{
+                        const olduser = _currentUser;
+                        if(newuser==null) {
+                            _currentUser = newuser;
+                            $onuserreset(newuser, olduser);
+                            UserNameLabels.map(label=>label.innerHTML = '«none»');
+                            self.CloseButt.classList.toggle('hidden', true)
+                            self.EditButt.disabled = this.HistoryButt.disabled = true;
+                            loadinfo.classList.toggle('hidden', true);
+                            return;
+                        }
+                        if(_currentUser && newuser.uid === _currentUser.uid) return;
+                        _currentUser = newuser;
+                        olduser ? $onuserswaped(newuser, olduser) : $onuserset(newuser, olduser);
+
+                        const user = Users.get(newuser.uid);
+                        loadinfo.classList.toggle('hidden', false);//"Loading..."
+                        historyloadinfo.classList.toggle('hidden', false);
+                        this.showTab(self.defaultTab);
+
+                        this.updateInfo(newuser);
+                        UserNameLabels.map(label=>label.innerHTML = `${newuser.nickname}#${newuser.uid}`);
+
+                        self.CloseButt.classList.toggle('hidden', false);
+                        self.EditButt.disabled = self.HistoryButt.disabled = false;
+                        
+                        user.then(userinfo=>{
+                            this.updateInfo(userinfo);
+                            loadinfo.classList.toggle('hidden', true)
+                        });
+                    }
+                })
+                const FillFields = [...TransactionInfo.getElementsByClassName('col2')[0].children];
+                Object.defineProperty(this, 'currentAction', {
+                    get:()=>_currentAcion,
+                    set:async _newAction=>{
+                        if(_newAction==null) {
+                            _currentAcion = newuser;
+                            TransactionInfo.classList.toggle('hidden', true);
+                            return;
+                        }
+                        const {tid, actionname, updates} = await _newAction;
+                        FillFields[0].innerHTML = tid;
+                        FillFields[1].innerHTML = actionname;
+                        FillFields[2].innerHTML = updates;
+                    }
+                })
+
+                this.EditButt.onclick = ()=>this.showTab(UserInfoEdit);
+                this.EditButt.oncontextmenu = ()=>{
+                    if(this.defaultTab===UserInfoEdit) return;
+                    this.defaultTab = UserInfoEdit;
+                    this.EditButt.classList.toggle('def', true);
+                    this.HistoryButt.classList.toggle('def', false);
+                }
+                this.HistoryButt.onclick = ()=>this.showTab(UserUpdatesHistoryTab);
+                this.HistoryButt.oncontextmenu = ()=>{
+                    if(this.defaultTab===UserUpdatesHistoryTab) return;
+                    this.defaultTab = UserUpdatesHistoryTab;
+                    this.EditButt.classList.toggle('def', false);
+                    this.HistoryButt.classList.toggle('def', true);
+                }
+                this.CreateNewUserButt.onclick = ()=>this.showTab(this.ActiveTab===UserCreateTab?null:UserCreateTab);
+                this.QueButt.onclick = ()=>this.showTab(this.ActiveTab===QueTab?null:QueTab);
+                this.CloseButt.onclick = ()=>{
+                    this.currentUser = null;
+                    if(this.ActiveTab !== UserCreateTab)
+                        this.showTab(null);
+                }
+                this.TabsLabels[UserInfoEdit.id] = this.EditButt;
+                this.TabsLabels[UserUpdatesHistoryTab.id] = this.HistoryButt;
+                this.TabsLabels[UserCreateTab.id] = this.CreateNewUserButt;
+                this.TabsLabels[QueTab.id] = this.QueButt;
+                this.currentUser = null;
+            }
+            async ParseActions(actionElement) {
+                const {tid, atid} = actionElement.dataset;
+                const actionname = `${actionElement.getElementsByClassName('ActionName')[0].innerHTML} :${atid}`;
+                const updates = `${actionElement.getElementsByClassName('updates')[0].innerHTML}`;
+                return {tid, actionname, updates};
+            }
+            show(userinfo, actionElement) {
+                if(this.currentUser?.uid !== userinfo?.uid) {
+                    this.currentUser&&
+                    [...pagec.children[0].children]
+                        .filter(el=>+el.dataset.uid==this.currentUser.uid)
+                        .map(el=>[...el.getElementsByClassName('info')])
+                        .flat(1)
+                            .map(x=>x.classList.toggle('active',false))
+                }
+                const changed = this.currentUser?.uid !== userinfo?.uid;
+                this.currentUser = userinfo;
+                this.currentAction = this.ParseActions(actionElement);
+                if(changed) {
+                    historyloadinfo.classList.toggle('hidden', false);
+                    Users.getHistory(userinfo.uid).then(rows=>{
+                        historyloadinfo.classList.toggle('hidden', true);
+                        const page = new Page(rows);
+                        UserUpdatesHistory.replaceChildren(page);//userhistorytabel updated... 
+                                                                //pagination not included =D
+                    });
+                }
+                // this.actionElement = 
+                userinfo&&
+                [...pagec.children[0].children]
+                    .filter(el=>+el.dataset.uid==this.currentUser.uid)
+                    .map(el=>[...el.getElementsByClassName('info')])
+                    .flat(1)
+                        .map(x=>x.classList.toggle('active',true))
+                //fetch to download info;
+            }
+            updateInfo({nickname, status=null, description=null}) {
+                nicknameinp.value = nickname;
+                if((status === null) && (description === null)) {
+                    statusinp.disabled = descriptioninp.disabled = true;
+                    statusinp.value = descriptioninp.value = '';
+                } else {
+                    statusinp.disabled = descriptioninp.disabled = false;
+                    statusinp.value = status;
+                    descriptioninp.value = description;
+                }
+            }
+            showTab(Tab){
+                if(Tab === this.ActiveTab) return;
+                if(this.ActiveTab !== null) {
+                    this.ActiveTab.classList.toggle('hidden',true);
+                    this.TabsLabels[this.ActiveTab.id].classList.toggle('active',false);
+                }
+                if(Tab == null) {
+                    this.ActiveTab = null;
+                    return;
+                }
+                Tab.classList.toggle('hidden', false);
+                this.TabsLabels[Tab.id].classList.toggle('active',true);
+                this.ActiveTab = Tab;
+                return;
+            }
+        }
+        let sio = null;
+        const Users = new class {
+            UsersBase = {};
+            async get(uid) {
+                const UsInfo = this.UsersBase[uid];
+                if(UsInfo === undefined) {
+                    const ActualUserInfoPromise = fetch(`/api/userinfo?uid=${uid}`).then(data=>data.json());
+                    this.UsersBase[uid] = ActualUserInfoPromise.then(userinfo=>this.UsersBase[uid]=userinfo);
+                    return ActualUserInfoPromise;
+                } else {
+                    return UsInfo;
+                }
+            }
+            async downloadHistory(uid) {
+                return fetch(`/api/userhistory?uid=${uid}`).then(data=>data.json());
+            }
+            async getHistory(uid, perm=false) {
+                const UsInfo = this.UsersBase[uid];
+                const onload = (UsInfo === undefined) || perm ? history=>{
+                        const UsInfo = this.UsersBase[uid];
+                        if(UsInfo[Symbol.toStringTag] === "Promise") {
+                            UsInfo.then(_=>this.UsersBase[uid].history=history);
+                        } else this.UsersBase[uid].history=history
+                } : (
+                    UsInfo[Symbol.toStringTag] === "Promise" ? 
+                        history=>UsInfo.then(
+                            _=>this.UsersBase[uid].history=history
+                        ) : ((!UsInfo.history) ? 
+                            history=>this.UsersBase[uid].history=history : null))
+                if(onload === null) 
+                    return this.UsersBase[uid].history;
+                const historyPromise = this.downloadHistory(uid);
+                historyPromise.then(onload);
+                return historyPromise;
+            }
+        };
+        let t, p;
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        let refreshUserHistory = ()=>{}
+        fetch('/api/pool').then(data=>data.json()).then(pool=>{
+            const PagControl = new PaginatorControls(pool.pagescount, Pages[pool.pagescount] = new Page(pool.rows));
+            const Tabs = new AdvancedTabsControl();
+            const actrow = new ActionsRowControl(PagControl, Tabs);
+            t = Tabs; p = PagControl//dev vars
+            show = (uid, nickname, parentNode)=>Tabs.show({uid,nickname}, parentNode);
+            let ts = pool.nts;
+            refreshUserHistory = ()=>{
+                historyloadinfo.classList.toggle('hidden', false);
+                Users.getHistory(Tabs.currentUser.uid, true).then(rows=>{
+                        historyloadinfo.classList.toggle('hidden', true);
+                        const page = new Page(rows);
+                        UserUpdatesHistory.replaceChildren(page);//userhistorytabel updated... 
+                                                                //pagination not included =D
+                    });
+            }
+            (async x=>{
+                while(1) {
+                    await fetch(`/api/pool?ts=${ts}`).then(data=>data.json()).then(pool=>{
+                        pool.nts&&(ts = pool.nts);
+                        pool.rows?.length&&PagControl.append(pool.rows);
+                    })
+                    await sleep(2000);
+                }
+            })()
+            nicknameinp.onkeypress = function(e){
+                if (!e) e = window.event;
+                var keyCode = e.code || e.key;
+                if (keyCode == 'Enter'){
+                    fetch(`/api/useredit?uid=${Tabs.currentUser.uid}&nickname=${nicknameinp.value}`)
+                        .then(data=>data.json())
+                        .then(data=>{
+                            const {uid, nickname} = data.success;
+                            Users.UsersBase[uid].nickname = nickname;
+                            UserEditInfo.textContent = JSON.stringify(data)
+                        })
+                    // Enter pressed
+                    return false;
+                }
+            }
+            statusinp.onkeypress = function(e){
+                if (!e) e = window.event;
+                var keyCode = e.code || e.key;
+                if (keyCode == 'Enter'){
+                    fetch(`/api/useredit?uid=${Tabs.currentUser.uid}&status=${nicknameinp.value}`)
+                        .then(data=>data.json())
+                        .then(data=>{
+                            const {uid, status} = data.success;
+                            Users.UsersBase[uid].status = status;
+                            UserEditInfo.textContent = JSON.stringify(data)
+                        })
+                    // Enter pressed
+                    return false;
+                }
+            }
+            descriptioninp.onkeypress = function(e){
+                if (!e) e = window.event;
+                var keyCode = e.code || e.key;
+                if (keyCode == 'Enter'){
+                    fetch(`/api/useredit?uid=${Tabs.currentUser.uid}&description=${nicknameinp.value}`)
+                        .then(data=>data.json())
+                        .then(data=>{
+                            const {uid, description} = data.success;
+                            Users.UsersBase[uid].description = description;
+                            UserEditInfo.textContent = JSON.stringify(data)
+                        })
+                    // Enter pressed
+                    return false;
+                }
+            }
+        });
+        function CreateUser() {
+            const f = fetch(`/api/createuser?nickname=${ninp.value}`);
+            f.then(data=>data.json()).then(data=>(CreateUserInfo.innerHTML=JSON.stringify(data))&&data.success&&(ninp.value=''))
+        }
+    </script>
+    <script src="/js/main.js" defer></script>
+</body>
+</html>
